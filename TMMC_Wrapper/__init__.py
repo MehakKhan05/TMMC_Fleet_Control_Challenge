@@ -98,18 +98,24 @@ class Robot(Node):
         self.imu_subscription  # prevent unused variable warning
         
         self.image_future = rclpy.Future()
-        self.image_subscription = self.create_subscription(Image,'/oakd/rgb/preview/image_raw',self.image_listener_callback,qos_profile_sensor_data)
-        self.image_subscription  # prevent unused variable warning
+        global is_SIM
+        if is_SIM:
+            self.image_subscription =  self.create_subscription(Image,'/camera/image_raw',self.image_listener_callback,qos_profile_sensor_data)
+        else:
+            self.image_subscription = self.create_subscription(Image,'/oakd/rgb/preview/image_raw',self.image_listener_callback,qos_profile_sensor_data)
+            self.image_subscription  # prevent unused variable warning
         
         self.camera_info_future = rclpy.Future()
-        self.camera_info_subscription = self.create_subscription(CameraInfo,'/oakd/rgb/preview/camera_info',self.camera_info_listener_callback,qos_profile_sensor_data)
-        self.camera_info_subscription  # prevent unused variable warning
-        
+        if is_SIM:
+            self.camera_info_subscription = self.create_subscription(CameraInfo,'/camera/camera_info',self.camera_info_listener_callback,qos_profile_sensor_data)
+        else:
+            self.camera_info_subscription = self.create_subscription(CameraInfo,'/oakd/rgb/preview/camera_info',self.camera_info_listener_callback,qos_profile_sensor_data)
+            self.camera_info_subscription  # prevent unused variable warning
+
         self.battery_state_future = rclpy.Future()
         self.battery_state_subscription = self.create_subscription(BatteryState,'/battery_state',self.battery_state_listener_callback,qos_profile_sensor_data)
         self.battery_state_subscription  # prevent unused variable warning
 
-        global is_SIM
         if (not(is_SIM)): 
             self.dock_client = ActionClient(self, Dock, '/dock')
             self.undock_client = ActionClient(self, Undock, '/undock')
