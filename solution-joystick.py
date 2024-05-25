@@ -1,11 +1,8 @@
-#start with imports, ie: import the wrapper
 import TMMC_Wrapper
 import rclpy
-import numpy as np
-import math
 from pynput.keyboard import Listener
 
-USING_HARDWARE = True
+USING_HARDWARE = False
 
 # initialization
 TMMC_Wrapper.is_SIM = True
@@ -19,17 +16,21 @@ class Robot:
 		self.keys_pressed = set()
 
 	def move_forward(self):
-		if self.min_dist_front <= 0.5:
+		if self.min_dist_front <= 0.3:
 			velocity = 0.0
 		else:
-			velocity = min(0.6 * self.min_dist_front, 0.5)
+			velocity = min(0.8 * self.min_dist_front, 0.5)
+		if USING_HARDWARE:
+			velocity /= 2
 		self.bot.send_cmd_vel(velocity, 0.0)
 
 	def move_backward(self):
-		if self.min_dist_back <= 0.5:
+		if self.min_dist_back <= 0.3:
 			velocity = 0.0
 		else:
-			velocity = min(0.6 * self.min_dist_back, 0.5)
+			velocity = min(0.8 * self.min_dist_back, 0.5)
+		if USING_HARDWARE:
+			velocity /= 2
 		self.bot.send_cmd_vel(-velocity, 0.0)
 
 	def turn_left(self):
@@ -63,23 +64,23 @@ class Robot:
 			self.stop_robot()
 		
 		try:
-			self.min_dist_front = min(self.bot.last_scan_msg.ranges[0:45] + self.bot.last_scan_msg.ranges[-45:])
+			if USING_HARDWARE:
+				self.min_dist_front = sorted(self.bot.last_scan_msg.ranges[90:270])[2] / 1.5 # get third smallest
+			else:
+				self.min_dist_front = min(self.bot.last_scan_msg.ranges[0:45] + self.bot.last_scan_msg.ranges[315:360])
 		except:
 			self.min_dist_front = -1
 		
 		try:
-			self.min_dist_back = min(self.bot.last_scan_msg.ranges[135:225])
+			if USING_HARDWARE:
+				self.min_dist_back = sorted(self.bot.last_scan_msg.ranges[450:630])[2] / 1.5 # get third smallest
+			else:
+				self.min_dist_back = min(self.bot.last_scan_msg.ranges[135:225])
 		except:
 			self.min_dist_back = -1
-
-		if USING_HARDWARE:
-			self.min_dist_back, self.min_dist_front = self.min_dist_front, self.min_dist_back
-
-		try:
-			print(self.bot.last_scan_msg.ranges)
-		except:
-			pass
-
+		
+		print("FRONT DISTANCE:", self.min_dist_front, "BACK DISTANCE:", self.min_dist_back)
+	
 		if "w" in self.keys_pressed:
 			self.move_forward()
 		if "s" in self.keys_pressed:
